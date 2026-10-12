@@ -1,0 +1,15 @@
+{
+  "name": "toranut-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "תורנויות רופאים — לוח חודשי, אילוצים, שיבוץ ידני ואוטומטי. Google Sheets כבסיס נתונים, Vercel כשרת.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node test/devserver.js",
+    "setup": "node scripts/setup.js",
+    "smoke": "node scripts/smoke.js",
+    "code": "node scripts/code.js",
+    "icons": "node scripts/icons.js",
+    "test": "node test/env.test.js && node test/db.test.js && node test/rules.test.js && node test/auth.test.js && node test/api.test.js"
+  }
+}

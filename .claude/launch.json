@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "toranut-dev", "runtimeExecutable": "node", "runtimeArgs": ["test/devserver.js"], "port": 8787 }
+  ]
+}
