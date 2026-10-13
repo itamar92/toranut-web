@@ -4,12 +4,17 @@
  *   node test/devserver.js   →  http://localhost:8787
  * קודים: צ׳יף 0000 · רופא/ה 1001 … 1018. /dev/cron?now=<ISO> מריץ את התזכורת האוטומטית בתאריך שבוחרים.
  * כניסה עם Google לא פעילה כאן (אין GOOGLE_CLIENT_ID) — היא נבדקת ב-test/auth.test.js.
+ *
+ *   node test/devserver.js --sheet   (npm run dev:sheet) → אותו שרת מול הגיליון האמיתי מ-.env, בלי נתוני דוגמה:
+ *   קוד הצ׳יף מ-CHIEF_CODE, כל שינוי נכתב לגיליון. /dev/cron כבוי — הוא היה שולח תזכורות אמיתיות.
  */
+const SHEET = process.argv.includes('--sheet');
+if (SHEET) require('../scripts/env');
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-dev-secret-dev-secret-1234';
 process.env.CHIEF_CODE = process.env.CHIEF_CODE || '0000';
 process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const http = require('http'), fs = require('fs'), path = require('path');
-const mem = require('./memdb').use(require('./demo').demoData(require('../lib/api').todayIso()));
+const mem = SHEET ? null : require('./memdb').use(require('./demo').demoData(require('../lib/api').todayIso()));
 
 const handlers = { login: require('../api/login'), logout: require('../api/logout'), me: require('../api/me'), rpc: require('../api/rpc'), cron: require('../api/cron') };
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -30,12 +35,15 @@ const srv = http.createServer((req, res) => {
   let body = ''; req.on('data', c => body += c); req.on('end', () => {
     const url = req.url.split('?')[0];
     if (url.startsWith('/api/')){ const h = handlers[url.slice(5)]; if (!h){ res.statusCode = 404; return res.end('{}') } wrap(req, res, body); return h(req, res) }
-    if (url === '/dev/cron') return devCron(req, res).catch(e => { res.statusCode = 500; res.end(String(e && e.message)) });
+    if (url === '/dev/cron' && !SHEET) return devCron(req, res).catch(e => { res.statusCode = 500; res.end(String(e && e.message)) });
     const f = path.join(__dirname, '..', 'public', url === '/' ? 'index.html' : path.normalize(url).replace(/^(\.\.[/\\])+/, ''));
     if (!f.startsWith(path.join(__dirname, '..', 'public')) || !fs.existsSync(f) || fs.statSync(f).isDirectory()){ res.statusCode = 404; return res.end('not found') }
     res.setHeader('Content-Type', MIME[path.extname(f)] || 'application/octet-stream'); res.setHeader('Cache-Control', 'no-store'); res.end(fs.readFileSync(f));
   });
 });
 const PORT = process.env.PORT || 8787;
-if (require.main === module) srv.listen(PORT, () => console.log('dev server http://localhost:' + PORT + '  (צ׳יף 0000 · רופא/ה 1001…1018)'));
+if (require.main === module && SHEET && String(process.env.SESSION_SECRET).length < 16)
+  console.warn('⚠ SESSION_SECRET ב-.env קצר מ-16 תווים — הכניסה תיכשל. זה לא קוד כניסה אלא מפתח אקראי לחתימת ה-cookie:\n' +
+    '  node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64url\'))"');
+if (require.main === module) srv.listen(PORT, () => console.log('dev server http://localhost:' + PORT + (SHEET ? '  — מול הגיליון האמיתי (SHEET_ID מ-.env). כניסה בקוד הצ׳יף מ-CHIEF_CODE' : '  (צ׳יף 0000 · רופא/ה 1001…1018)')));
 module.exports = { srv, mem };
