@@ -4,6 +4,10 @@
 // ו-Node נפל ב-"DECODER routines::unsupported".
 const fs = require('fs'), path = require('path');
 
+// רשת ביתית בלי IPv6 עובד, כש-DNS מחזיר ל-Google גם כתובת IPv6: Node מנסה את שתיהן עם 250ms לכל ניסיון, ולפעמים
+// מוותר על הכול ("fetch failed"). בסקריפטים המקומיים ובשרת הפיתוח מול הגיליון — IPv4 קודם. ב-Vercel הקובץ לא נטען.
+require('dns').setDefaultResultOrder('ipv4first');
+
 /** טקסט של .env → {KEY: value}. תומך ב-# להערות, במירכאות כפולות ובודדות, בערך מרובה שורות ובסופי שורה של Windows */
 function parse(text){
   const out = {}, lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');

@@ -6,6 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "dev": "node test/devserver.js",
+    "dev:sheet": "node test/devserver.js --sheet",
     "setup": "node scripts/setup.js",
     "smoke": "node scripts/smoke.js",
     "code": "node scripts/code.js",

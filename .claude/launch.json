@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "toranut-dev", "runtimeExecutable": "node", "runtimeArgs": ["test/devserver.js"], "port": 8787, "autoPort": true }
+    { "name": "toranut-dev", "runtimeExecutable": "node", "runtimeArgs": ["test/devserver.js"], "port": 8787, "autoPort": true },
+    { "name": "toranut-sheet", "runtimeExecutable": "node", "runtimeArgs": ["test/devserver.js", "--sheet"], "port": 8788, "autoPort": true }
   ]
 }
