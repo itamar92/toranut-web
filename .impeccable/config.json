@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "icon-tile-stack",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-13T11:50:56.691Z",
+        "reason": "Claude: flagged element is the app's brand logo beside the h1 (login + header), specified in HANDOFF.md §11 as the client's request (13.10.2026); predates this session (commit 5f08781), not a feature-card icon tile"
+      }
+    ]
+  }
+}
