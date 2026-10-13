@@ -2,7 +2,7 @@
 // ניווט הולך קודם לרשת (עד NAV_TIMEOUT), כדי שפריסה חדשה תופיע כבר בפתיחה הראשונה; בלי רשת — המעטפת השמורה.
 // /api/* לא נכנס למטמון לעולם: ה-snapshot נשמר ב-localStorage ע"י האפליקציה, והיא בודקת גרסה מול השרת ב-poll.
 // בכל פריסה מעלים את CACHE — הדפדפן מוריד מעטפת חדשה ברקע ומודיע לאפליקציה.
-var CACHE = 'tr-shell-v3';
+var CACHE = 'tr-shell-v4';
 var SHELL = ['/', '/rules.js', '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 var NAV_TIMEOUT = 3500;                // קליטה גרועה — לא מחכים לרשת יותר מזה, פותחים מהמטמון
 var FRESH = '/__shell-fresh';          // סימן: הניווט האחרון הגיע מהרשת. הדף בודק אותו לפני שהוא מציע "יש גרסה חדשה"
