@@ -1,5 +1,5 @@
 /**
- * test/api.test.js — פונקציות השרת (lib/api.js) על DB בזיכרון: הרשאות, מחזור החודש, שיבוץ, החלפות, התראות.
+ * test/api.test.js — פונקציות השרת (lib/api.js) על DB בזיכרון: הרשאות, מחזור החודש, שיבוץ, החלפות, התראות (היומן; השליחה לטלפון — test/push.test.js).
  *   node test/api.test.js
  */
 process.env.SESSION_SECRET = 'test-secret-test-secret-test-secret';
@@ -66,7 +66,15 @@ const rejects = (p, re) => assert.rejects(p, re);
     assert.equal((await call(D2, 'saveConstraints', next, { [tue]: 'prefer' })).saved, 0);
     // חודש שפורסם / שלא נפתח / תאריך מחוץ לחודש
     await rejects(call(D1, 'saveConstraints', cur, { [curShift]: 'no' }), /לא פתוח לאילוצים/);
-    await rejects(call(D1, 'saveConstraints', later, { [later + '-02']: 'no' }), /לא פתוח לאילוצים/);
+    // מראש: חודש עתידי שעוד לא נפתח — נשמר, אבל אי אפשר לשלוח; לא חודש שכבר התחיל, ולא מעבר ל-AHEAD
+    assert.equal((await call(D1, 'saveConstraints', later, { [later + '-02']: 'no' })).saved, 1);
+    assert.ok(mem.m.constraints.some(c => c.id === keyOf('d1', later + '-02')));
+    await rejects(call(D1, 'submit', later, {}), /עוד לא נפתח/);
+    assert.ok(!mem.m.submissions.some(s => s.month === later));
+    const far = R.addMonths(cur, R.AHEAD + 1), prevM = R.addMonths(cur, -1);
+    await rejects(call(D1, 'saveConstraints', far, { [far + '-02']: 'no' }), /עד 6 חודשים קדימה/);
+    await rejects(call(D1, 'saveConstraints', prevM, { [prevM + '-02']: 'no' }), /לא פתוח לאילוצים/);
+    await call(D1, 'saveConstraints', later, { [later + '-02']: 'ok' });
     await rejects(call(D1, 'saveConstraints', next, { [curShift]: 'no' }), /מחוץ לחודש/);
     await rejects(call(D1, 'saveConstraints', next, { [nd(2)]: 'maybe' }), /מצב לא מוכר/);
     // שליחה
@@ -82,6 +90,32 @@ const rejects = (p, re) => assert.rejects(p, re);
     assert.ok(mem.m.constraints.some(c => c.id === keyOf('d1', nd(11))));
     const v = mem.version();
     assert.ok(v > 1, 'כתיבה מקדמת גרסה');
+  }
+
+  /* ---- אילוצים קבועים: רופא/ה עורך/ת את שלו/ה, הצ׳יף מקבל/ת התראה ---- */
+  {
+    const tues = [1, 2, 3, 4, 5, 6, 7].map(n => R.addDays(today, n)).filter(d => R.weekday(d) === 2);
+    const mem = setup({ shifts: [{ id: keyOf(tues[0], 'icu'), date: tues[0], station_id: 'icu', doctor_id: 'd1', locked: false, note: '' }] });
+    assert.deepEqual(await call(D1, 'saveFixed', {}, null), { changed: false });
+    await call(D1, 'saveFixed', { 2: 'no', 5: 'prefer' }, 'מרפאה', 'd5');         // doctorId של מישהו אחר — נכתב לעצמי
+    assert.deepEqual(mem.m.fixed_constraints.filter(f => f.doctor_id === 'd1').map(f => [f.weekday, f.status, f.note]).sort(), [[2, 'no', 'מרפאה'], [5, 'prefer', 'מרפאה']]);
+    assert.ok(!mem.m.fixed_constraints.some(f => f.doctor_id === 'd5'));
+    const n = mem.m.notifications.filter(x => x.to === 'chief' && /^אילוצים קבועים: נועה ברק/.test(x.text));
+    assert.equal(n.length, 1);
+    assert.match(n[0].text, /יום שלישי לא יכול\/ה · יום שישי מעדיף\/ה שלא \("מרפאה"\)/);
+    assert.match(n[0].text, new RegExp('תורנות שכבר שובצה נופלת על יום חסום — ' + R.fmtShort(tues[0])));
+    // היום עכשיו נעול גם לאילוצים החודשיים, ומחייב בשיבוץ
+    const tueNext = R.daysOf(next).find(d => R.weekday(d) === 2);
+    assert.equal((await call(D1, 'saveConstraints', next, { [tueNext]: 'prefer' })).saved, 0);
+    await rejects(call(CHIEF, 'assign', tueNext, 'icu', 'd1'), /אילוץ קבוע: מרפאה/);
+    // רופא/ה רואה רק את הקבועים של עצמו/ה
+    assert.deepEqual(unpack((await call(D1, 'snapshot')).tables.fixed_constraints).map(f => f.doctor_id).filter((x, i, a) => a.indexOf(x) === i), ['d1']);
+    // מחיקה — התראה "בלי אילוצים קבועים"
+    await call(D1, 'saveFixed', { 2: '', 5: '' });
+    assert.ok(!mem.m.fixed_constraints.some(f => f.doctor_id === 'd1'));
+    assert.ok(mem.m.notifications.some(x => x.to === 'chief' && x.text === 'אילוצים קבועים: נועה ברק · בלי אילוצים קבועים'));
+    await rejects(call(D1, 'saveFixed', { 7: 'no' }), /יום בשבוע לא תקין/);
+    await rejects(call(D1, 'saveFixed', { 1: 'maybe' }), /מצב לא מוכר/);
   }
 
   /* ---- שיבוץ: כללים קשיחים חוסמים גם צ׳יף; נעילה; אוטומטי; ניקוי ---- */
@@ -162,26 +196,6 @@ const rejects = (p, re) => assert.rejects(p, re);
     assert.ok(r.id);
   }
 
-  /* ---- התראות: מי רואה מה, וסימון כנקרא ---- */
-  {
-    const mem = setup({ notifications: [
-      { id: 'n1', to: 'all', text: 'לכולם', at: new Date().toISOString(), read_by: '' },
-      { id: 'n2', to: 'd1', text: 'לנועה', at: new Date().toISOString(), read_by: '' },
-      { id: 'n3', to: 'chief', text: 'לצ׳יף', at: new Date().toISOString(), read_by: '' },
-      { id: 'n4', to: 'd2', text: 'ליונתן', at: new Date().toISOString(), read_by: '' } ] });
-    let s = await call(D1, 'snapshot');
-    assert.deepEqual(unpack(s.tables.notifications).map(n => n.id).sort(), ['n1', 'n2']);
-    s = await call(CHIEF, 'snapshot');
-    assert.deepEqual(unpack(s.tables.notifications).map(n => n.id).sort(), ['n1', 'n3']);
-    const v = mem.version();
-    assert.equal((await call(D1, 'markRead', [])).read, 2);
-    assert.equal(mem.version(), v, 'סימון כנקרא לא מקדם גרסה');
-    s = await call(D1, 'snapshot');
-    assert.ok(unpack(s.tables.notifications).every(n => n.read === true));
-    s = await call(D2, 'snapshot');
-    assert.equal(unpack(s.tables.notifications).find(n => n.id === 'n1').read, false, 'נקרא אצל נועה בלבד');
-  }
-
   /* ---- הגדרות: עמדות, רופאים, הסמכות, אילוצים קבועים, חגים ---- */
   {
     const mem = setup({ months: [{ id: cur, month: cur, status: 'published', deadline: '', published_at: 'x' }, { id: next, month: next, status: 'scheduling', deadline: '', published_at: '' }] });
@@ -204,12 +218,15 @@ const rejects = (p, re) => assert.rejects(p, re);
     assert.ok(mem.m.qualifications.some(q => q.id === keyOf('d2', 'scopus')));
     await call(CHIEF, 'setQual', 'd2', 'scopus', false);
     assert.ok(!mem.m.qualifications.some(q => q.id === keyOf('d2', 'scopus')));
-    await call(CHIEF, 'setFixed', 'd1', 3, 'no', 'מרפאה');
+    await call(CHIEF, 'saveFixed', { 3: 'no' }, 'מרפאה', 'd1');
     assert.deepEqual(mem.m.fixed_constraints.filter(f => f.doctor_id === 'd1').map(f => [f.weekday, f.status, f.note]), [[3, 'no', 'מרפאה']]);
-    await call(CHIEF, 'setFixed', 'd1', 3, 'prefer');
+    await call(CHIEF, 'saveFixed', { 3: 'prefer' }, null, 'd1');
     assert.equal(mem.m.fixed_constraints.find(f => f.id === keyOf('d1', 3)).note, 'מרפאה', 'ההערה נשמרת כשמחליפים מצב');
-    await call(CHIEF, 'setFixed', 'd1', 3, '');
-    assert.ok(!mem.m.fixed_constraints.some(f => f.id === keyOf('d1', 3)));
+    await call(CHIEF, 'saveFixed', { 0: 'no' }, null, 'd1');
+    assert.equal(mem.m.fixed_constraints.find(f => f.id === keyOf('d1', 0)).note, 'מרפאה', 'יום חדש מקבל את ההערה הקיימת');
+    await call(CHIEF, 'saveFixed', { 3: '', 0: '' }, null, 'd1');
+    assert.ok(!mem.m.fixed_constraints.some(f => f.doctor_id === 'd1'));
+    assert.ok(!mem.m.notifications.some(n => /אילוצים קבועים/.test(n.text)), 'שינוי של הצ׳יף — בלי התראה');
     await call(CHIEF, 'addHoliday', nd(12), 'יום המחלקה');
     assert.equal(R.model(mem.m).holidays[nd(12)], 'יום המחלקה');
     await call(CHIEF, 'removeHoliday', nd(12));

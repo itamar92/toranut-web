@@ -60,7 +60,7 @@ p{margin:0}
 /* app bar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:14px 8px;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px}
-.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:700;font-size:20px;line-height:1}
+.logo{width:34px;height:34px;display:block;flex:none}
 .brand h1{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.01em}
 .brand .sub{display:block;font-size:12px;color:var(--muted);font-weight:400;font-family:var(--font)}
 .who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative}
@@ -70,13 +70,6 @@ textarea{width:100%;min-height:70px;resize:vertical}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .seg button{border:0;background:transparent;padding:6px 12px;color:var(--muted)}
 .seg button.on{background:var(--accent);color:var(--accent-fg)}
-.bell{position:relative;width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:16px}
-.bell .n{position:absolute;top:-6px;inset-inline-start:-6px;background:var(--no);color:#fff;font-size:10.5px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding-inline:4px}
-.notes{position:absolute;top:calc(100% + 6px);inset-inline-start:0;width:min(360px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:30;padding:8px;display:flex;flex-direction:column;gap:4px}
-.note{padding:8px 10px;border-radius:8px;background:var(--bg);font-size:13px;display:flex;gap:8px;align-items:flex-start}
-.note.unread{background:var(--accent-soft)}
-.note .t{font-size:11px;color:var(--muted);white-space:nowrap;margin-inline-start:auto}
-.note .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin-top:6px}
 
 /* tabs */
 .tabs{display:flex;gap:4px;overflow-x:auto;padding-block:10px;scrollbar-width:none}
@@ -86,7 +79,8 @@ textarea{width:100%;min-height:70px;resize:vertical}
 
 /* month bar */
 .monthbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block:8px 12px}
-.monthbar .nav{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:18px;line-height:1}
+.monthbar .nav{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:18px;line-height:1;display:grid;place-items:center;color:var(--fg)}
+.monthbar .nav svg{display:block}
 .monthbar h2{min-width:170px;text-align:center}
 .monthbar .sp{flex:1}
 .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--muted)}
@@ -295,10 +289,49 @@ tr.off td{opacity:.55}
 #tab-settings .grid2{grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr))}
 .card.wide{grid-column:1/-1}
 .lslot .req{font-size:11.5px;color:var(--pref);font-weight:600}
-/* the bell's dropdown opens toward the page, not off its edge (the prototype's .who was wider) */
-.notes{inset-inline-start:auto;inset-inline-end:0;max-height:70vh;overflow:auto}
-@media (max-width:640px){ .who .userchip{max-width:120px;overflow:hidden;text-overflow:ellipsis}
-  .notes{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);inset-inline:16px;width:auto} }
+/* my fixed constraints: one large button per weekday (Sunday on the right), dashed = changed and not saved yet */
+.fixedmine{margin-top:18px}
+.fixedmine h2{font-size:16px;margin-bottom:6px}
+.wdbig{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wdb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;padding:8px 2px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;cursor:pointer}
+.wdb b{font-size:13.5px;font-weight:600}
+.wdb span{font-size:12px;color:var(--muted);white-space:nowrap}
+.wdb em{font-style:normal}
+.wdb.no{background:var(--no-bg);border-color:var(--no)} .wdb.no span{color:var(--no);font-weight:600}
+.wdb.prefer{background:var(--pref-bg);border-color:var(--pref)} .wdb.prefer span{color:var(--pref);font-weight:600}
+.wdb.ch{border-style:dashed;border-width:2px;padding:7px 1px}
+.wdb:disabled{cursor:not-allowed;opacity:.6}
+#fixedNote{flex:1 1 220px;min-width:0}
+@media (max-width:560px){ .wdb em{display:none} .wdb span{font-size:15px} }
+@media (max-width:640px){ .who .userchip{max-width:120px;overflow:hidden;text-overflow:ellipsis} }
+/* sticky navigation — the tabs are always reachable without scrolling up:
+   desktop: app bar → tabs → (board) month bar, all stuck. phone: the app bar scrolls away to save room, and the tabs stick
+   at the top with the month bar under them. The board's month bar (arrows, month, "היום", status) is one row also on a
+   phone; the note and the view toggle sit in a plain row below it. --bar-h / --tabs-h are measured in JS */
+.tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--bar-h,62px));z-index:18;background:var(--bg)}
+.tabs.stuck{box-shadow:0 1px 0 var(--line)}
+#boardBar{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--bar-h,62px) + var(--tabs-h,54px));z-index:15;background:var(--bg);margin-block:0;padding-block:10px 8px}
+#boardBar.stuck{box-shadow:0 1px 0 var(--line)}
+@media (max-width:640px){
+  .bar{position:relative}
+  .tabs{top:env(safe-area-inset-top,0px)}
+  #boardBar{top:calc(env(safe-area-inset-top,0px) + var(--tabs-h,54px))}
+}
+.monthbar.sub{margin-block:0 10px}
+.cal .day{scroll-margin-block:40vh}
+/* "היום" on the board: the day cell pulses twice after the jump */
+@keyframes flash{0%,100%{box-shadow:inset 0 0 0 1px var(--today)}50%{box-shadow:0 0 0 5px var(--accent-soft),inset 0 0 0 2px var(--today)}}
+.flash{animation:flash .8s ease-in-out 2}
+/* my shifts: the list rows of the board, one station card per shift */
+.myshifts .lslot{width:100%;max-width:440px}
+.myshifts .lday.past{opacity:.6}
+.myshifts .lslot .dn2{font-size:16px}
+/* add to home screen / phone notifications */
+.isteps{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
+.ikey{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 4px;border:1px solid var(--line);border-radius:6px;background:var(--bg);vertical-align:middle;font-size:12px}
+.devrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.devrow .ok{color:var(--ok);font-weight:600}
+.notice .acts{display:flex;gap:8px}
 </style>
 <script src="/rules.js"></script>
 </head>
@@ -308,7 +341,7 @@ tr.off td{opacity:.55}
 
 <div class="login-wrap" id="login" hidden>
   <div class="login-card">
-    <div class="brand"><span class="logo" aria-hidden="true">+</span><h1>תורנויות רופאים</h1></div>
+    <div class="brand"><img class="logo" src="/icon.svg" alt="" width="34" height="34"><h1>תורנויות רופאים</h1></div>
     <p class="muted">כניסה עם חשבון Google שרשום אצל הצ׳יף, או עם קוד אישי.</p>
     <div id="gwrap" hidden><div id="gbtn"></div><div class="or">או עם קוד</div></div>
     <form class="codein" id="codeForm" autocomplete="off">
@@ -322,21 +355,23 @@ tr.off td{opacity:.55}
 <div class="app" id="app" hidden>
   <header class="bar">
     <div class="brand">
-      <span class="logo" aria-hidden="true">+</span>
+      <img class="logo" src="/icon.svg" alt="" width="34" height="34">
       <h1>תורנויות רופאים <span class="sub" id="brandSub"></span></h1>
     </div>
     <div class="who">
-      <button type="button" class="bell" id="bell" aria-label="התראות">🔔<span class="n" id="bellN" hidden></span></button>
-      <div class="notes" id="notes" hidden></div>
       <span class="userchip" id="userName"></span>
       <span class="chip" id="roleChip" hidden>צ׳יף</span>
       <button type="button" class="btn sm ghost" id="logoutBtn">יציאה</button>
     </div>
   </header>
   <div class="banner" id="offline" hidden>אין חיבור לשרת — מוצג המידע האחרון שנשמר במכשיר. שינויים יתאפשרו כשהחיבור יחזור.</div>
+  <div class="notice" id="installNotice" hidden><span>📲 <b>הוספה למסך הבית</b> — נפתח כמו אפליקציה, גם בלי קליטה, ומקבלים התראות לטלפון.</span><span class="acts"><button type="button" class="btn sm primary" data-install>הוספה</button><button type="button" class="btn sm ghost" id="installNo">לא תודה</button></span></div>
+  <div class="notice" id="pushNotice" hidden><span>📳 <b>התראות לטלפון</b> — חודש שנפתח לאילוצים, לוח שפורסם, תזכורות והחלפות.</span><span class="acts"><button type="button" class="btn sm primary" data-push="on">הפעלה</button><button type="button" class="btn sm ghost" id="pushLater">לא עכשיו</button></span></div>
 
+  <div id="tabsAnchor"></div>
   <nav class="tabs" id="tabs">
     <button type="button" data-tab="board" class="on">הלוח</button>
+    <button type="button" data-tab="shifts" id="shiftsTab">התורנויות שלי</button>
     <button type="button" data-tab="mine" id="mineTab">האילוצים שלי <span class="cnt" id="mineCnt" hidden></span></button>
     <button type="button" data-tab="plan" class="chief" hidden>שיבוץ <span class="cnt" id="planCnt" hidden></span></button>
     <button type="button" data-tab="settings" class="chief" hidden>הגדרות</button>
@@ -345,11 +380,14 @@ tr.off td{opacity:.55}
 
   <main>
     <section id="tab-board">
-      <div class="monthbar">
-        <button type="button" class="nav" id="prevM" aria-label="חודש קודם">›</button>
+      <div class="monthbar" id="boardBar">
+        <button type="button" class="nav" id="prevM" aria-label="חודש קודם"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <h2 id="monthTitle" class="tabular"></h2>
-        <button type="button" class="nav" id="nextM" aria-label="חודש הבא">‹</button>
+        <button type="button" class="nav" id="nextM" aria-label="חודש הבא"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" class="btn sm" id="todayBtn" title="מעבר לתאריך של היום">היום</button>
         <span class="badge" id="monthStatus"></span>
+      </div>
+      <div class="monthbar sub">
         <span class="muted small" id="monthNote"></span>
         <span class="sp"></span>
         <div class="seg viewseg" data-for="board"><button type="button" data-v="grid" class="on">יומן</button><button type="button" data-v="list">רשימה</button></div>
@@ -363,26 +401,54 @@ tr.off td{opacity:.55}
       </div>
     </section>
 
+    <section id="tab-shifts" hidden>
+      <div class="monthbar">
+        <button type="button" class="nav" id="prevS" aria-label="חודש קודם"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <h2 id="shiftsTitle" class="tabular"></h2>
+        <button type="button" class="nav" id="nextS" aria-label="חודש הבא"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="badge" id="shiftsStatus"></span>
+      </div>
+      <div class="notice" id="shiftsNotice" hidden></div>
+      <div class="stats" id="shiftsStats"></div>
+      <div class="myshifts" id="shiftsList"></div>
+    </section>
+
     <section id="tab-mine" hidden>
-      <div class="notice" id="mineNotice"></div>
-      <div class="monthbar" id="mineBar">
-        <p class="hint" style="margin:0;flex:1 1 300px">ביומן: לחיצה על יום מחליפה מצב <span class="chip ok">פנוי/ה</span> ← <span class="chip no">לא יכול/ה</span> ← <span class="chip pref">מעדיף/ה שלא</span>. ברשימה: בוחרים ישירות. ימים עם אילוץ קבוע נעולים. כל שינוי נשמר אוטומטית.</p>
+      <div class="monthbar" id="mineNav">
+        <button type="button" class="nav" id="prevC" aria-label="חודש קודם"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <h2 id="mineTitle" class="tabular"></h2>
+        <button type="button" class="nav" id="nextC" aria-label="חודש הבא"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="badge" id="mineStatus"></span>
+        <span class="sp"></span>
         <div class="seg viewseg" data-for="mine"><button type="button" data-v="grid" class="on">יומן</button><button type="button" data-v="list">רשימה</button></div>
       </div>
+      <div class="notice" id="mineNotice"></div>
+      <p class="hint" id="mineHint">ביומן: לחיצה על יום מחליפה מצב <span class="chip ok">פנוי/ה</span> ← <span class="chip no">לא יכול/ה</span> ← <span class="chip pref">מעדיף/ה שלא</span>. ברשימה: בוחרים ישירות. כל שינוי נשמר אוטומטית. ימים עם אילוץ קבוע 🔒 נעולים — משנים אותם למטה, ב"האילוצים הקבועים שלי".</p>
       <div class="mine" id="mineCal"></div>
       <div class="actions" id="mineActions">
         <button type="button" class="btn primary" id="saveMine">שמירה ושליחה לצ׳יף</button>
         <span class="muted small" id="mineSummary"></span>
         <span class="saving" id="saveState"></span>
       </div>
+      <div class="card fixedmine" id="fixedMine" hidden>
+        <h2>האילוצים הקבועים שלי</h2>
+        <p class="hint">ימים בשבוע שחלים על כל חודש — למשל מרפאה קבועה. לחיצה על יום: <span class="chip no">לא יכול/ה</span> ← <span class="chip pref">מעדיף/ה שלא</span> ← ללא. השינוי נשמר רק בלחיצה על "שמירה", והצ׳יף מקבל/ת התראה.</p>
+        <div class="wdbig" id="fixedChips"></div>
+        <div class="actions">
+          <input type="text" id="fixedNote" maxlength="80" placeholder="הערה לצ׳יף (למשל: מרפאה)" aria-label="הערה לאילוצים הקבועים">
+          <button type="button" class="btn primary" id="fixedSave">שמירה</button>
+          <button type="button" class="btn ghost" id="fixedUndo" hidden>ביטול</button>
+          <span class="saving" id="fixedState"></span>
+        </div>
+      </div>
     </section>
 
     <section id="tab-plan" hidden>
       <div class="swaps" id="swaps"></div>
       <div class="monthbar">
-        <button type="button" class="nav" id="prevP" aria-label="חודש קודם">›</button>
+        <button type="button" class="nav" id="prevP" aria-label="חודש קודם"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <h2 id="planTitle" class="tabular"></h2>
-        <button type="button" class="nav" id="nextP" aria-label="חודש הבא">‹</button>
+        <button type="button" class="nav" id="nextP" aria-label="חודש הבא"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <span class="badge" id="planStatus"></span>
         <span class="muted small" id="planNote"></span>
         <span class="sp"></span>
@@ -431,14 +497,16 @@ tr.off td{opacity:.55}
         </div>
         <div class="card">
           <h2>אילוצים קבועים</h2>
-          <p class="hint">ימים קבועים בשבוע, לכל חודש. לחיצה על יום: לא יכול/ה ← מעדיף/ה שלא ← ריק.</p>
+          <p class="hint">ימים קבועים בשבוע, לכל חודש. לחיצה על יום: לא יכול/ה ← מעדיף/ה שלא ← ריק. כל רופא/ה יכול/ה לעדכן גם בעצמו/ה ב"האילוצים שלי" — ואז מגיעה התראה.</p>
           <div class="tablewrap"><table id="fixedTable"></table></div>
         </div>
       </div>
     </section>
 
     <section id="tab-about" hidden>
-      <h3 style="margin-top:6px">חוקי השיבוץ</h3>
+      <h3 style="margin-top:6px">התראות והתקנה</h3>
+      <div class="card" id="deviceCard"></div>
+      <h3>חוקי השיבוץ</h3>
       <div class="card">
         <div class="rules">
           <div class="rule"><i class="h">!</i><span><b>יום אחרי יום — חסום.</b> אין שתי תורנויות בימים עוקבים, בכל עמדה.</span></div>
@@ -448,8 +516,9 @@ tr.off td{opacity:.55}
           <div class="rule"><i class="s">~</i><span><b>יומיים מנוחה — עדיפות.</b> יום מנוחה אחד בלבד מוריד בדירוג.</span></div>
           <div class="rule"><i class="s">~</i><span><b>"מעדיף/ה שלא" — עדיפות.</b></span></div>
           <div class="rule"><i class="s">~</i><span><b>איזון.</b> פחות תורנויות ופחות סופ״שים החודש = גבוה יותר ברשימה. לא תמיד יוצא שווה בשווה, וזה בסדר.</span></div>
+          <div class="rule"><i class="n">i</i><span><b>אילוצים קבועים</b> (למשל מרפאה בכל יום שלישי) — כל רופא/ה מעדכן/ת ב"האילוצים שלי", והם חלים על כל חודש. הצ׳יף מקבל/ת התראה על כל שינוי.</span></div>
           <div class="rule"><i class="n">i</i><span><b>החלפות</b> רק דרך הצ׳יף: לוחצים על התורנות שלך בלוח ושולחים בקשה; הצ׳יף מקבל/ת התראה ומשבץ/ת מחדש.</span></div>
-          <div class="rule"><i class="n">i</i><span><b>התראות</b> בתוך האפליקציה (הפעמון): חודש נפתח לאילוצים, תזכורת לפני המועד, לוח פורסם, בקשת החלפה.</span></div>
+          <div class="rule"><i class="n">i</i><span><b>התראות</b> לטלפון, למי שהוסיף/ה את האפליקציה למסך הבית והפעיל/ה התראות: חודש נפתח לאילוצים, תזכורת לפני המועד, לוח פורסם, בקשת החלפה.</span></div>
         </div>
       </div>
       <h3>מחזור חודשי</h3>
@@ -458,7 +527,7 @@ tr.off td{opacity:.55}
           <li>הצ׳יף פותח חודש לאילוצים וקובע מועד אחרון.</li>
           <li>כל רופא/ה מסמן/ת ב"האילוצים שלי": פנוי/ה · לא יכול/ה · מעדיף/ה שלא, ולוחץ/ת "שמירה ושליחה לצ׳יף". אפשר לעדכן עד המועד.</li>
           <li>הצ׳יף סוגר את האילוצים, משבץ (ידנית עם המלצות, או אוטומטית) ומפרסם.</li>
-          <li>הלוח שפורסם מופיע לכולם בטאב "הלוח". התורנויות שלך במסגרת כפולה.</li>
+          <li>הלוח שפורסם מופיע לכולם בטאב "הלוח". התורנויות שלך במסגרת כפולה, וכולן ברשימה אחת ב"התורנויות שלי".</li>
         </ol>
       </div>
     </section>
@@ -483,12 +552,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const fmtShort = R.fmtShort, mLabel = R.monthLabel;
 const fmtDate = iso => 'יום ' + WDFULL[R.weekday(iso)] + ' ' + fmtShort(iso);
 const ilIso = d => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-const ilTime = d => new Intl.DateTimeFormat('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit' }).format(d);
 
 /* ---------- state ---------- */
 let SNAP = null, T = {}, M = R.model({}), MONTHS = {}, SUBMITTED = {}, TODAY = ilIso(new Date());
 const CFG = { google: '' };
-const state = { tab: 'board', view: R.monthOf(TODAY), plan: null, planView: 'list', views: { board: 'grid', mine: 'grid' }, pick: null, confirmSt: null, offline: false, busy: 0 };
+const state = { tab: 'board', view: R.monthOf(TODAY), smonth: R.monthOf(TODAY), mine: null, plan: null, planView: 'list', views: { board: 'grid', mine: 'grid' }, pick: null, confirmSt: null, offline: false, busy: 0 };
 try { const v = JSON.parse(localStorage.getItem('toranut-views') || 'null'); if (v && v.board && v.mine) state.views = { board: v.board, mine: v.mine }; if (v && v.plan) state.planView = v.plan } catch (e) {}
 const saveViews = () => { try { localStorage.setItem('toranut-views', JSON.stringify({ board: state.views.board, mine: state.views.mine, plan: state.planView })) } catch (e) {} };
 const me = () => (SNAP && SNAP.me) || { role: 'doctor', did: '', name: '' };
@@ -553,14 +621,6 @@ function stepMonth(k, dir){ const n = R.addMonths(k, dir), r = monthRange(); ret
 function defaultPlanMonth(){
   const ks = Object.keys(MONTHS).sort().filter(k => MONTHS[k].status === 'open' || MONTHS[k].status === 'scheduling');
   return ks.find(k => MONTHS[k].status === 'scheduling') || ks[0] || R.addMonths(R.monthOf(TODAY), 1);
-}
-
-/* ---------- notifications ---------- */
-function noteTime(at){ const d = new Date(at); if (isNaN(d)) return ''; const day = ilIso(d); return day === TODAY ? 'היום ' + ilTime(d) : day === R.addDays(TODAY, -1) ? 'אתמול' : fmtShort(day) }
-function renderBell(){
-  const list = T.notifications || [], un = list.filter(n => !n.read).length;
-  $('#bellN').hidden = !un; $('#bellN').textContent = un;
-  $('#notes').innerHTML = list.length ? list.map(n => '<div class="note' + (n.read ? '' : ' unread') + '">' + (n.read ? '' : '<span class="dot"></span>') + '<span>' + esc(n.text) + '</span><span class="t">' + esc(noteTime(n.at)) + '</span></div>').join('') : '<div class="note muted">אין התראות</div>';
 }
 
 /* ---------- rendering helpers (from the prototype) ---------- */
@@ -639,11 +699,18 @@ function applyPending(){
   const did = me().did; if (!did) return;
   [FLY, PEND].forEach(p => Object.keys(p.changes).forEach(d => { const v = p.changes[d], key = did + '|' + d; if (v === 'ok') delete M.cons[key]; else M.cons[key] = v }));
 }
+/** החודש הפתוח לאילוצים (הראשון), או חודש בשיבוץ שעוד לא פורסם. '' = אין. ממנו מתחיל הטאב, והוא התג "!" */
 function mineMonth(){
   const ks = Object.keys(MONTHS).sort();
   return ks.find(k => MONTHS[k].status === 'open') || ks.reverse().find(k => MONTHS[k].status === 'scheduling' && !MONTHS[k].published_at && k >= R.monthOf(TODAY)) || '';
 }
-function mineReadOnly(k){ const r = MONTHS[k]; return !r || r.status !== 'open' || (!!r.deadline && TODAY > r.deadline) }
+/** החודש שמוצג בטאב — אפשר לעבור בין חודשים; רק חודש פתוח (עד המועד) ניתן לעריכה */
+const mineK = () => state.mine || (state.mine = mineMonth() || R.monthOf(TODAY));
+/** חודש עתידי שעוד לא נפתח — אפשר לסמן בו מראש (עד R.AHEAD חודשים קדימה), אבל לא לשלוח */
+const prefillMonth = k => !MONTHS[k] && k > R.monthOf(TODAY) && k <= R.addMonths(R.monthOf(TODAY), R.AHEAD);
+function mineReadOnly(k){ const r = MONTHS[k]; return r ? r.status !== 'open' || (!!r.deadline && TODAY > r.deadline) : !prefillMonth(k) }
+/** הטווח של הטאב: כמו בלוח, ועד R.AHEAD חודשים קדימה בשביל הסימון מראש */
+function stepMine(k, dir){ const n = R.addMonths(k, dir), r = monthRange(), ahead = R.addMonths(R.monthOf(TODAY), R.AHEAD); return n < r.lo || n > (r.hi > ahead ? r.hi : ahead) ? k : n }
 function saveStateText(){
   const el = $('#saveState'); if (!el) return;
   const n = Object.keys(PEND.changes).length + Object.keys(FLY.changes).length;
@@ -651,16 +718,24 @@ function saveStateText(){
   el.textContent = saveStateText.bad ? 'השינויים לא נשמרו — ננסה שוב' : n ? 'שומר…' : saveStateText.saved ? 'נשמר ✓' : '';
 }
 function renderMine(){
-  const k = mineMonth(), did = me().did, n = $('#mineNotice');
-  const hide = on => { $('#mineBar').hidden = on; $('#mineActions').hidden = on; if (on) $('#mineCal').innerHTML = '' };
+  renderFixedMine();
+  const did = me().did, n = $('#mineNotice');
+  const hide = on => { $('#mineNav').hidden = on; $('#mineHint').hidden = on; $('#mineActions').hidden = on; if (on) $('#mineCal').innerHTML = '' };
   if (!did){ n.innerHTML = '<span>הכניסה הזו (קוד צ׳יף) לא מקושרת לרופא/ה, ולכן אין לה אילוצים.</span>'; hide(true); return }
-  if (!k){ n.innerHTML = '<span>אין כרגע חודש פתוח לאילוצים. הצ׳יף יפתח את החודש הבא, ותקבלו התראה.</span>'; hide(true); renderMineBadge(); return }
   hide(false);
-  const r = MONTHS[k], ro = mineReadOnly(k), sub = SUBMITTED[k] || new Set(), isSub = sub.has(did);
-  const total = activeDocs().length, cnt = (SNAP.counts && SNAP.counts[k]) || 0;
-  const why = r.status !== 'open' ? 'האילוצים נסגרו והצ׳יף משבץ. לשינוי — פנו לצ׳יף.' : 'המועד האחרון עבר. לשינוי — פנו לצ׳יף.';
-  n.innerHTML = '<span><b>אילוצים ל' + esc(mLabel(k)) + '</b>' + (r.deadline ? ' · ' + (ro ? 'המועד היה ' : 'פתוח עד ') + esc(fmtDate(r.deadline)) : '') + '</span>' +
-    '<span class="chip ' + (isSub ? 'ok' : 'pref') + '">' + (isSub ? 'שלחת ✓' + (ro ? '' : ' (אפשר לעדכן עד המועד)') : 'עוד לא שלחת') + '</span><span class="muted small">מילאו ' + cnt + ' מתוך ' + total + '</span>' + (ro ? '<span class="small"><b>' + why + '</b></span>' : '');
+  const k = mineK(), r = MONTHS[k], [bc, bl] = STATUS[statusOf(k)], ro = mineReadOnly(k), open = !!r && r.status === 'open', pre = prefillMonth(k);
+  $('#mineTitle').textContent = mLabel(k); $('#mineStatus').className = 'badge ' + bc; $('#mineStatus').textContent = bl;
+  const isSub = (SUBMITTED[k] || new Set()).has(did);
+  const other = mineMonth(), goOther = other && other !== k && MONTHS[other].status === 'open' ? '<button type="button" class="btn sm primary" data-minego="' + other + '">לאילוצים של ' + esc(mLabel(other)) + '</button>' : '';
+  if (pre) n.innerHTML = '<span><b>' + esc(mLabel(k)) + ' עוד לא נפתח — אפשר כבר לסמן מראש.</b> מה שמסמנים נשמר. כשהצ׳יף יפתח את החודש תקבלו התראה, ואז שולחים לצ׳יף.</span><span class="chip">סימון מראש</span>' + goOther;
+  else if (!r) n.innerHTML = '<span><b>' + esc(mLabel(k)) + ' לא נפתח לאילוצים.</b></span>' + goOther;
+  else if (open){
+    const total = activeDocs().length, cnt = (SNAP.counts && SNAP.counts[k]) || 0;
+    n.innerHTML = '<span><b>אילוצים ל' + esc(mLabel(k)) + '</b>' + (r.deadline ? ' · ' + (ro ? 'המועד היה ' : 'פתוח עד ') + esc(fmtDate(r.deadline)) : '') + '</span>' +
+      '<span class="chip ' + (isSub ? 'ok' : 'pref') + '">' + (isSub ? 'שלחת ✓' + (ro ? '' : ' (אפשר לעדכן עד המועד)') : 'עוד לא שלחת') + '</span><span class="muted small">מילאו ' + cnt + ' מתוך ' + total + '</span>' + (ro ? '<span class="small"><b>המועד האחרון עבר. לשינוי — פנו לצ׳יף.</b></span>' : '');
+  }
+  else n.innerHTML = '<span><b>אילוצים ל' + esc(mLabel(k)) + '</b> · ' + (r.status === 'scheduling' && !r.published_at ? 'האילוצים נסגרו והצ׳יף משבץ. לשינוי — פנו לצ׳יף.' : 'הלוח פורסם — לצפייה בלבד.') + '</span>' + (isSub ? '<span class="chip ok">שלחת ✓</span>' : '') + goOther;
+  $('#mineHint').hidden = ro; $('#mineActions').hidden = !(open || pre); $('#saveMine').hidden = !open;
   renderMineBadge(); setViewSeg('mine');
   let no = 0, pr = 0;
   const count = c => { if (c && !c.fixed){ if (c.s === 'no') no++; else pr++ } };
@@ -682,8 +757,9 @@ function renderMine(){
 }
 function renderMineBadge(){ const k = mineMonth(), did = me().did; const show = !!did && !!k && !mineReadOnly(k) && !(SUBMITTED[k] && SUBMITTED[k].has(did)); $('#mineCnt').hidden = !show; $('#mineCnt').textContent = '!' }
 function setMine(d, v){
-  const k = mineMonth(); if (!k || mineReadOnly(k) || state.offline) return;
+  const k = mineK(); if (mineReadOnly(k) || state.offline || R.monthOf(d) !== k) return;
   const c = R.constraintOf(M, me().did, d); if (c && c.fixed) return;
+  if (PEND.month && PEND.month !== k && Object.keys(PEND.changes).length){ toast('רגע — עוד שומר את השינויים בחודש הקודם'); return }
   PEND.month = k; PEND.changes[d] = v;
   const key = me().did + '|' + d; if (v === 'ok') delete M.cons[key]; else M.cons[key] = v;
   saveStateText.saved = false; renderMine();
@@ -693,7 +769,7 @@ function cycleMine(d){ const cur = M.cons[me().did + '|' + d]; setMine(d, !cur ?
 /** שולח את מה שממתין. submit=true — גם "שליחה לצ׳יף" */
 function flushMine(submit){
   clearTimeout(setMine._t);
-  const k = PEND.month || mineMonth();
+  const k = PEND.month || mineK();
   if (!k || (!submit && (!Object.keys(PEND.changes).length || Object.keys(FLY.changes).length))) return Promise.resolve();
   FLY = { month: k, changes: Object.assign({}, FLY.changes, PEND.changes) }; PEND = { month: '', changes: {} };
   const sent = FLY.changes;
@@ -709,6 +785,54 @@ function flushMine(submit){
     if (/המועד|לא פתוח/.test(e.message)){ PEND = { month: '', changes: {} }; refresh().catch(() => {}) }
     else setMine._t = setTimeout(flushMine, 15000);
   });
+}
+
+/* ---------- my fixed constraints ---------- */
+// FIXD — מה שסומן ועוד לא נשמר: days {weekday → 'no'|'prefer'|''}, note (undefined = בלי שינוי). נשמר רק ב"שמירה" —
+// כל שמירה של רופא/ה היא התראה לצ׳יף, ולכן לא שומרים אוטומטית על כל לחיצה
+let FIXD = { days: {}, note: undefined };
+const fixedSaved = () => { const f = M.fixed[me().did] || {}, o = {}; Object.keys(f).forEach(w => o[w] = f[w].s); return o };
+const fixedNoteSaved = () => { const f = M.fixed[me().did] || {}; return Object.keys(f).map(w => f[w].note).find(Boolean) || '' };
+function fixedNow(){ const o = fixedSaved(); Object.keys(FIXD.days).forEach(w => { if (FIXD.days[w]) o[w] = FIXD.days[w]; else delete o[w] }); return o }
+const fixedDirty = () => Object.keys(FIXD.days).length > 0 || (FIXD.note !== undefined && FIXD.note.trim() !== fixedNoteSaved());
+function renderFixedMine(){
+  const did = me().did; $('#fixedMine').hidden = !did; if (!did) return;
+  const saved = fixedSaved(), cur = fixedNow(), dirty = fixedDirty(), off = state.offline;
+  $('#fixedChips').innerHTML = WDFULL.map((w, i) => {
+    const s = cur[i] || '', lbl = s === 'no' ? 'לא יכול/ה' : s === 'prefer' ? 'מעדיף/ה שלא' : 'ללא';
+    return '<button type="button" class="wdb ' + s + ((saved[i] || '') !== s ? ' ch' : '') + '" data-wd="' + i + '" aria-label="יום ' + w + ': ' + lbl + '"' + (off ? ' disabled' : '') + '><b>' + w + '</b><span>' + (s === 'no' ? '✕ <em>' + lbl + '</em>' : s === 'prefer' ? '~ <em>' + lbl + '</em>' : '—') + '</span></button>';
+  }).join('');
+  const ni = $('#fixedNote');
+  ni.hidden = !Object.keys(cur).length; ni.disabled = off;
+  if (document.activeElement !== ni) ni.value = FIXD.note !== undefined ? FIXD.note : fixedNoteSaved();
+  $('#fixedSave').disabled = !dirty || off; $('#fixedUndo').hidden = !dirty;
+  $('#fixedState').textContent = dirty ? 'יש שינויים שלא נשמרו' : '';
+}
+
+/* ---------- my shifts ---------- */
+function myShifts(k){ const did = me().did, out = []; R.daysOf(k).forEach(d => { const sl = slotOf(d); M.stations.forEach(st => { if (did && sl[st.id] === did) out.push({ d, st }) }) }); return out }
+function relDay(d){ if (d === TODAY) return 'היום'; if (d === R.addDays(TODAY, 1)) return 'מחר'; if (d < TODAY) return 'עבר'; const n = Math.round((R.utc(d) - R.utc(TODAY)) / 86400000); return 'בעוד ' + n + ' ימים' }
+function renderShifts(){
+  const k = state.smonth, st = statusOf(k), [c, l] = STATUS[st], seen = doctorsSee(k), visible = isChief() || seen;
+  $('#shiftsTitle').textContent = mLabel(k); $('#shiftsStatus').className = 'badge ' + c; $('#shiftsStatus').textContent = l;
+  const n = $('#shiftsNotice'); n.hidden = !(isChief() && !seen && MONTHS[k]);
+  if (!n.hidden) n.innerHTML = '<span><b>טיוטה</b> — הרופאים עוד לא רואים את הלוח של ' + esc(mLabel(k)) + '.</span>';
+  if (!visible){
+    $('#shiftsStats').innerHTML = '';
+    $('#shiftsList').innerHTML = '<div class="empty"><b>הלוח של ' + esc(mLabel(k)) + ' עוד לא פורסם</b><span>' + (st === 'open' ? 'כרגע אוספים אילוצים.' : st === 'scheduling' ? 'הצ׳יף משבץ. תקבלו התראה כשהלוח יפורסם.' : 'החודש עוד לא נפתח.') + '</span></div>';
+    return;
+  }
+  const list = myShifts(k), heavy = list.filter(x => dayInfo(x.d).heavy).length, next = list.find(x => x.d >= TODAY);
+  $('#shiftsStats').innerHTML = !list.length ? '' : '<div class="stat"><div class="v tabular">' + list.length + '</div><div class="l">תורנויות</div></div><div class="stat"><div class="v tabular">' + heavy + '</div><div class="l">סופ״ש / חג</div></div>' +
+    (new Set(list.map(x => x.st.id)).size > 1 ? M.stations.map(s => { const m = list.filter(x => x.st.id === s.id).length; return m ? '<div class="stat"><div class="v tabular">' + m + '</div><div class="l">' + esc(s.name) + '</div></div>' : '' }).join('') : '') +
+    (next ? '<div class="stat"><div class="v">' + esc(relDay(next.d)) + '</div><div class="l">התורנות הבאה · ' + esc(fmtDate(next.d)) + '</div></div>' : '');
+  $('#shiftsList').innerHTML = !list.length ? '<div class="empty"><b>אין לך תורנויות ב' + esc(mLabel(k)) + '</b></div>' : '<div class="list">' + list.map(x => {
+    const sw = openSwap(x.d, x.st.id), can = seen && x.d >= TODAY, info = dayInfo(x.d);
+    const extra = sw ? '<span class="req">⇄ בקשת ההחלפה נשלחה לצ׳יף</span>' : can ? '<span class="cands">לחיצה לבקשת החלפה</span>' : '';
+    const inner = '<span class="sn"><i></i>' + (info.heavy ? 'סופ״ש / חג · ' : '') + esc(relDay(x.d)) + '</span><span class="dn2">' + esc(x.st.name) + '</span>' + extra;
+    const attrs = ' class="lslot filled me" style="' + stStyle(x.st) + '" data-iso="' + x.d + '" data-st="' + esc(x.st.id) + '"';
+    return '<div class="lday' + dayCls(x.d) + '">' + listHead(x.d) + '<div>' + (can ? '<button type="button"' + attrs + '>' + inner + '</button>' : '<div' + attrs + '>' + inner + '</div>') + '</div></div>';
+  }).join('') + '</div>';
 }
 
 /* ---------- plan ---------- */
@@ -846,25 +970,34 @@ function showCode(res){
 
 /* ---------- tabs & app shell ---------- */
 function brand(){ $('#brandSub').textContent = M.stations.map(s => s.name).join(' · ') }
+const TABS = ['board', 'shifts', 'mine', 'plan', 'settings', 'about'];
 function showTab(t){
   if ((t === 'plan' || t === 'settings') && !isChief()) t = 'board';
-  if (t === 'mine' && !me().did) t = 'board';
+  if ((t === 'mine' || t === 'shifts') && !me().did) t = 'board';
   state.tab = t;
   $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  for (const s of ['board', 'mine', 'plan', 'settings', 'about']) $('#tab-' + s).hidden = s !== t;
+  for (const s of TABS) $('#tab-' + s).hidden = s !== t;
   if (state.pick) closePicker();
-  renderTab(); $('#notes').hidden = true;
+  renderTab();
 }
-function renderTab(){ const t = state.tab; if (t === 'board') renderBoard(); if (t === 'mine') renderMine(); if (t === 'plan') renderPlan(); if (t === 'settings') renderSettings() }
+function renderTab(){ const t = state.tab; if (t === 'board') renderBoard(); if (t === 'shifts') renderShifts(); if (t === 'mine') renderMine(); if (t === 'plan') renderPlan(); if (t === 'settings') renderSettings() }
 function applyRole(){
   const chief = isChief();
   $$('#tabs .chief').forEach(b => b.hidden = !chief);
-  $('#mineTab').hidden = !me().did;
+  $('#mineTab').hidden = $('#shiftsTab').hidden = !me().did;
   $('#userName').textContent = me().name; $('#roleChip').hidden = !chief;
-  if ((!chief && (state.tab === 'plan' || state.tab === 'settings')) || (state.tab === 'mine' && !me().did)) state.tab = 'board';
+  if ((!chief && (state.tab === 'plan' || state.tab === 'settings')) || ((state.tab === 'mine' || state.tab === 'shifts') && !me().did)) state.tab = 'board';
+}
+/** קישור מהתראה (?tab=…&m=YYYY-MM) — פותח את הטאב על החודש. מחזיר false אם אין בו טאב מוכר */
+function openLink(search){
+  const p = new URLSearchParams(search || ''), t = p.get('tab'), m = p.get('m');
+  if (TABS.indexOf(t) < 0) return false;
+  if (R.isMonth(m)){ if (t === 'board') state.view = m; if (t === 'shifts') state.smonth = m; if (t === 'mine') state.mine = m; if (t === 'plan') state.plan = m }
+  showTab(t); window.scrollTo(0, 0);
+  return true;
 }
 function renderAll(){
-  applyRole(); brand(); renderBell(); renderMineBadge(); if (isChief()) renderSwaps();
+  applyRole(); brand(); renderDevice(); renderMineBadge(); if (isChief()) renderSwaps(); measureSticky();
   if (state.pick && !state.pick.swap && state.pick.iso){ openPicker(state.pick.iso, state.pick.site); if (state.tab !== 'plan') renderTab() }
   else renderTab();
 }
@@ -903,15 +1036,19 @@ function boot(){
     const prev = (() => { try { return JSON.parse(localStorage.getItem('tr-snap-who') || '""') } catch (e) { return '' } })();
     ingest(s);
     const who = s.me.role + ':' + s.me.did;
-    if (prev !== who){ PEND = { month: '', changes: {} }; state.tab = 'board'; state.plan = null; state.view = R.monthOf(TODAY) }
+    if (prev !== who){ PEND = { month: '', changes: {} }; FIXD = { days: {}, note: undefined }; state.tab = 'board'; state.plan = null; state.view = state.smonth = R.monthOf(TODAY) }
+    state.mine = null;
     try { localStorage.setItem('tr-snap-who', JSON.stringify(who)) } catch (e) {}
     showApp();
+    if (location.search && openLink(location.search)) history.replaceState(null, '', '/');
   });
 }
 $('#codeForm').addEventListener('submit', e => { e.preventDefault(); const c = $('#codeIn').value.trim(); if (c) login({ code: c }) });
 $('#logoutBtn').addEventListener('click', () => {
   flushMine();
-  fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {}).then(() => {
+  // המכשיר לא ימשיך לקבל את ההתראות של מי שיצא/ה. עד 2.5 שניות — בלי רשת יוצאים בכל זאת
+  const off = pushLocal().then(sub => sub && pushHere() ? rpc('pushOff', [sub.endpoint]).then(() => sub.unsubscribe()) : null).catch(() => {});
+  Promise.race([off, new Promise(ok => setTimeout(ok, 2500))]).then(() => { PUSH.tag = undefined; return fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }) }).catch(() => {}).then(() => {
     try { google.accounts.id.disableAutoSelect() } catch (e) {}
     try { localStorage.removeItem('tr-snap-who') } catch (e) {}
     loggedOut('');
@@ -919,21 +1056,28 @@ $('#logoutBtn').addEventListener('click', () => {
 });
 
 /* ---------- events ---------- */
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab) });
-$('#bell').addEventListener('click', () => {
-  const n = $('#notes'); n.hidden = !n.hidden;
-  if (!n.hidden && (T.notifications || []).some(x => !x.read)){
-    rpc('markRead', [[]]).then(() => { setTimeout(() => { (T.notifications || []).forEach(x => x.read = true); renderBell() }, 600) }).catch(() => {});
-  }
-});
-document.addEventListener('click', e => { if (!$('#notes').hidden && !e.target.closest('#notes') && !e.target.closest('#bell')) $('#notes').hidden = true });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ showTab(b.dataset.tab); toTabContent() } });
 $$('.viewseg').forEach(seg => seg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.views[seg.dataset.for] = b.dataset.v; saveViews(); if (seg.dataset.for === 'board') renderBoard(); else renderMine() }));
 $('#prevM').addEventListener('click', () => { state.view = stepMonth(state.view, -1); renderBoard() });
 $('#nextM').addEventListener('click', () => { state.view = stepMonth(state.view, 1); renderBoard() });
+$('#todayBtn').addEventListener('click', () => {
+  state.view = R.monthOf(TODAY); renderBoard();
+  const el = $('#boardCal .today'); if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+});
+$('#prevS').addEventListener('click', () => { state.smonth = stepMonth(state.smonth, -1); renderShifts() });
+$('#nextS').addEventListener('click', () => { state.smonth = stepMonth(state.smonth, 1); renderShifts() });
+$('#shiftsList').addEventListener('click', e => { const b = e.target.closest('button.lslot'); if (b) openSwapPanel(b.dataset.iso, b.dataset.st) });
+const mineStep = dir => { flushMine(); state.mine = stepMine(mineK(), dir); renderMine() };
+$('#prevC').addEventListener('click', () => mineStep(-1));
+$('#nextC').addEventListener('click', () => mineStep(1));
+$('#mineNotice').addEventListener('click', e => { const b = e.target.closest('[data-minego]'); if (b){ flushMine(); state.mine = b.dataset.minego; renderMine() } });
 $('#prevP').addEventListener('click', () => { state.plan = stepMonth(state.plan, -1); closePicker(); renderPlan() });
 $('#nextP').addEventListener('click', () => { state.plan = stepMonth(state.plan, 1); closePicker(); renderPlan() });
 $('#boardCal').addEventListener('click', e => {
-  if (e.target.closest('[data-go]')) return showTab(e.target.closest('[data-go]').dataset.go);
+  const go = e.target.closest('[data-go]');
+  if (go){ if (go.dataset.go === 'mine') state.mine = state.view; return showTab(go.dataset.go) }
   const b = e.target.closest('button.slot,button.lslot'); if (b) openSwapPanel(b.dataset.iso, b.dataset.st);
 });
 $('#mineCal').addEventListener('click', e => { const sb = e.target.closest('.stseg button'); if (sb){ setMine(sb.closest('.stseg').dataset.iso, sb.dataset.v); return } const c = e.target.closest('.day'); if (c && c.dataset.iso) cycleMine(c.dataset.iso) });
@@ -1010,13 +1154,26 @@ $('#docAdd').addEventListener('click', () => {
 });
 $('#fixedTable').addEventListener('click', e => {
   const b = e.target.closest('.wdchip'); if (!b) return;
-  const f = M.fixed[b.dataset.doc] || {}, cur = f[b.dataset.wd], note = Object.keys(f).map(w => f[w].note).find(Boolean) || '';
-  act('setFixed', [b.dataset.doc, Number(b.dataset.wd), !cur ? 'no' : cur.s === 'no' ? 'prefer' : '', cur ? cur.note : note]).catch(() => {});
+  const cur = (M.fixed[b.dataset.doc] || {})[b.dataset.wd];
+  act('saveFixed', [{ [b.dataset.wd]: !cur ? 'no' : cur.s === 'no' ? 'prefer' : '' }, null, b.dataset.doc]).catch(() => {});
 });
 $('#fixedTable').addEventListener('change', e => {
-  const t = e.target; if (!t.dataset.fnote) return;
-  const f = M.fixed[t.dataset.fnote] || {};
-  Promise.all(Object.keys(f).map(w => rpc('setFixed', [t.dataset.fnote, Number(w), f[w].s, t.value.trim()]))).then(() => refresh()).then(() => toast('ההערה נשמרה')).catch(err => toast(err.message));
+  const t = e.target; if (t.dataset.fnote) act('saveFixed', [{}, t.value.trim(), t.dataset.fnote], 'ההערה נשמרה').catch(() => {});
+});
+$('#fixedChips').addEventListener('click', e => {
+  const b = e.target.closest('.wdb'); if (!b || b.disabled) return;
+  const w = b.dataset.wd, s = fixedNow()[w] || '', nx = !s ? 'no' : s === 'no' ? 'prefer' : '';
+  if (nx === (fixedSaved()[w] || '')) delete FIXD.days[w]; else FIXD.days[w] = nx;
+  renderFixedMine();
+});
+$('#fixedNote').addEventListener('input', e => { FIXD.note = e.target.value; renderFixedMine() });
+$('#fixedUndo').addEventListener('click', () => { FIXD = { days: {}, note: undefined }; $('#fixedNote').blur(); renderFixedMine() });
+$('#fixedSave').addEventListener('click', () => {
+  if (!fixedDirty()) return;
+  rpc('saveFixed', [Object.assign({}, FIXD.days), FIXD.note !== undefined ? FIXD.note.trim() : null], true).then(() => {
+    FIXD = { days: {}, note: undefined }; renderAll();
+    toast(isChief() ? 'האילוצים הקבועים נשמרו' : 'האילוצים הקבועים נשמרו, והצ׳יף קיבל/ה התראה');
+  }).catch(err => { toast(err.message); renderAll() });
 });
 $('#stTable').addEventListener('click', e => {
   const rm = e.target.closest('[data-rm]'), yes = e.target.closest('[data-rm-yes]'), no = e.target.closest('[data-rm-no]');
@@ -1043,6 +1200,138 @@ $('#cycleTable').addEventListener('click', e => {
 });
 $('#cycleTable').addEventListener('change', e => { const t = e.target; if (!t.dataset.dl) return; const k = t.dataset.dl; if (MONTHS[k] && t.value) act('setDeadline', [k, t.value], 'המועד עודכן').catch(() => {}) });
 $('#remDays').addEventListener('change', e => act('setSetting', ['reminder_days', Number(e.target.value)], 'נשמר').catch(() => {}));
+
+/* ---------- add to home screen ----------
+ * מ-Platoon-web. אנדרואיד (Chrome/Edge/Samsung): הדפדפן יורה beforeinstallprompt, ושומרים אותו לכפתור.
+ * iOS: אין חלון התקנה — רק Safari, דרך תפריט השיתוף — ולכן הנחיה. בשאר (Chrome באייפון, מחשב) — ההנחיה המתאימה. */
+let installEvt = null;
+const isInstalled = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const iosDevice = () => { const ua = navigator.userAgent; return /iPhone|iPad|iPod/.test(ua) || (!/Android/.test(ua) && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) };
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e });
+window.addEventListener('appinstalled', () => { installEvt = null; closePicker(); toast('נוספה למסך הבית ✓ — פותחים מהאייקון'); renderDevice() });
+const SHARE_ICON = '<span class="ikey"><svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 1v9M4 4l3-3 3 3M3 7H2v8h10V7h-1"/></svg></span>';
+function installApp(){
+  if (installEvt){ const ev = installEvt; installEvt = null; ev.prompt(); ev.userChoice.then(c => { if (c.outcome !== 'accepted') installEvt = ev }); return }
+  const ua = navigator.userAgent, ios = iosDevice(), safari = ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua), android = /Android/.test(ua);
+  let steps, note = '';
+  if (ios && !safari){ steps = ['פותחים את הכתובת הזאת ב-<b>Safari</b> (רק Safari יודע להוסיף למסך הבית)', 'לוחצים על כפתור השיתוף ' + SHARE_ICON, 'בוחרים <b>הוסף למסך הבית</b>, ואז <b>הוסף</b>']; note = 'באייפון, דרך Safari:' }
+  else if (ios) steps = ['לוחצים על כפתור השיתוף ' + SHARE_ICON + ' (הריבוע עם החץ למעלה)', 'גוללים בתפריט ובוחרים <b>הוסף למסך הבית</b>', 'לוחצים <b>הוסף</b>'];
+  else if (android){ steps = ['פותחים את תפריט הדפדפן <span class="ikey">⋮</span>', 'בוחרים <b>הוספה למסך הבית</b> או <b>התקנת אפליקציה</b>', 'מאשרים']; note = 'אם חלון ההתקנה לא נפתח מיד — דרך התפריט:' }
+  else { steps = ['בסרגל הכתובת מופיע אייקון התקנה <span class="ikey">⊕</span> (Chrome / Edge)', 'לוחצים עליו ומאשרים <b>התקנה</b>']; note = 'במחשב:' }
+  state.pick = { swap: true };
+  $('#pickTitle').textContent = 'הוספה למסך הבית';
+  $('#pickSub').textContent = ios ? 'iPhone / iPad' : android ? 'Android' : 'מחשב';
+  $('#pickBody').innerHTML = (note ? '<p class="hint" style="margin:0">' + note + '</p>' : '') + '<ol class="isteps">' + steps.map(t => '<li>' + t + '</li>').join('') + '</ol>' +
+    (ios && !safari ? '<button type="button" class="btn" id="copyUrl">העתקת הכתובת</button>' : '') +
+    '<p class="hint" style="margin-top:8px">אחרי ההוספה פותחים את "תורנויות" מהאייקון — במסך מלא, גם בלי קליטה — ומפעילים שם התראות לטלפון.</p>';
+  $('#pickFoot').hidden = true; $('#picker').hidden = false; $('#backdrop').hidden = false;
+  if ($('#copyUrl')) $('#copyUrl').onclick = () => { try { navigator.clipboard.writeText(location.origin).then(() => toast('הועתק ✓'), () => toast('לא הצלחתי להעתיק')) } catch (e) {} };
+}
+
+/* ---------- phone notifications (Web Push) ----------
+ * רק באפליקציה שבמסך הבית (באייפון זה גם התנאי של iOS 16.4+). המפתח הציבורי מגיע ב-snapshot (SNAP.push.key),
+ * והמכשירים שלי שהשרת מכיר — SNAP.push.tags. המכשיר מזוהה בגיבוב של כתובת המנוי (webpush.tagOf בשרת). */
+const PUSH = { tag: undefined, busy: false };                     // tag: '' = אין מנוי במכשיר; undefined = עוד לא נבדק
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pushReg = () => 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistration().then(r => r || null, () => null) : Promise.resolve(null);
+const pushLocal = () => pushReg().then(r => r && r.pushManager ? r.pushManager.getSubscription() : null).catch(() => null);
+function pushTagOf(ep){
+  if (!ep || !(window.crypto && crypto.subtle)) return Promise.resolve('');
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(ep)).then(b => Array.from(new Uint8Array(b), x => ('0' + x.toString(16)).slice(-2)).join('').slice(0, 16));
+}
+const pushHere = () => !!PUSH.tag && ((SNAP && SNAP.push && SNAP.push.tags) || []).indexOf(PUSH.tag) >= 0;
+function pushState(){
+  if (!isInstalled()) return 'install';
+  if (!pushSupported()) return 'unsupported';
+  if (!(SNAP && SNAP.push && SNAP.push.key)) return 'nokey';
+  if (PUSH.tag === undefined){ if (!PUSH.busy){ PUSH.busy = true; pushLocal().then(sub => pushTagOf(sub && sub.endpoint)).then(t => { PUSH.tag = t || '' }, () => { PUSH.tag = '' }).then(() => { PUSH.busy = false; renderDevice() }) } return 'checking' }
+  if (pushHere()) return 'on';
+  return Notification.permission === 'denied' ? 'denied' : 'off';
+}
+function b64uBytes(v){ v = String(v).replace(/-/g, '+').replace(/_/g, '/'); const b = atob(v + '==='.slice((v.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)) }
+const sameBytes = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+/** הפעלה: הרשאה ← מנוי ← pushOn. requestPermission ראשון ובלי שום המתנה לפניו — אייפון מציג את חלון ההרשאה רק כתגובה ישירה ללחיצה */
+function pushEnable(btn){
+  const key = SNAP && SNAP.push && SNAP.push.key; if (!key) return;
+  const label = btn.textContent; btn.disabled = true; btn.textContent = 'מפעיל…';
+  let perm; try { perm = Notification.requestPermission() } catch (e) { perm = Promise.reject(e) }
+  Promise.resolve(perm).then(p => {
+    if (p !== 'granted') throw new Error(p === 'denied' ? 'ההתראות נחסמו. אפשר לפתוח אותן בהגדרות המכשיר.' : 'ההתראות לא אושרו');
+    return pushReg();
+  }).then(reg => {
+    if (!reg) throw new Error('ההתראות עובדות רק באתר עצמו (https), לא בשרת הפיתוח');
+    const k = b64uBytes(key);
+    return reg.pushManager.getSubscription().then(old => {
+      const was = old && old.options && old.options.applicationServerKey;  // המפתחות בשרת הוחלפו — מנוי ישן לא יעבוד
+      return was && !sameBytes(new Uint8Array(was), k) ? old.unsubscribe().then(() => null) : old;
+    }).then(sub => sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: k }));
+  }).then(sub => rpc('pushOn', [sub.toJSON()], true)).then(r => {
+    PUSH.tag = r.tag; renderAll(); toast(r.sent ? 'ההתראות פעילות ✓ — נשלחה התראת בדיקה' : 'ההתראות פעילות ✓');
+  }).catch(e => { btn.disabled = false; btn.textContent = label; toast((e && e.message) || 'משהו השתבש — נסו שוב'); renderDevice() });
+}
+function pushDisable(){
+  let s0 = null;
+  pushLocal().then(sub => { if (!sub) throw new Error('אין מנוי במכשיר הזה'); s0 = sub; return rpc('pushOff', [sub.endpoint], true) })
+    .then(() => s0.unsubscribe().catch(() => {})).then(() => { PUSH.tag = ''; renderAll(); toast('ההתראות כובו במכשיר הזה') })
+    .catch(e => { PUSH.tag = undefined; toast(e.message); renderDevice() });
+}
+/** הבאנר "הוספה למסך הבית" — חד־פעמי, ורק בטלפון/טאבלט: אחרי "הוספה" או "לא תודה" הוא לא חוזר (נשאר ב"איך זה עובד") */
+const installSeen = () => { try { return !!localStorage.getItem('tr-install-seen') } catch (e) { return false } };
+const installSeenSet = () => { try { localStorage.setItem('tr-install-seen', '1') } catch (e) {} };
+const pushLater = () => { try { return Date.now() - Number(localStorage.getItem('tr-push-later') || 0) < 14 * 86400000 } catch (e) { return false } };
+/** הכפתור בכותרת, הבאנר "התראות לטלפון", והכרטיס ב"איך זה עובד" */
+function renderDevice(){
+  const st = pushState(), ios = iosDevice();
+  $('#installNotice').hidden = isInstalled() || installSeen() || !(ios || /Android/.test(navigator.userAgent));
+  $('#pushNotice').hidden = !(st === 'off' && !pushLater());
+  const what = '<p class="hint" style="margin:8px 0 0">מה מגיע: חודש שנפתח לאילוצים, תזכורת לפני המועד, לוח שפורסם או עודכן, ותשובה לבקשת החלפה' + (isChief() ? ' (ולצ׳יף — בקשות החלפה ושינויי אילוצים קבועים)' : '') + '.</p>';
+  const H = {
+    install: '<div class="devrow"><span>📲 האפליקציה עוד לא במסך הבית של המכשיר הזה.</span><button type="button" class="btn sm primary" data-install>הוספה למסך הבית</button></div><p class="hint" style="margin:8px 0 0">ההתראות לטלפון מגיעות רק לאפליקציה שבמסך הבית. אחרי ההוספה פותחים אותה מהאייקון, ומפעילים כאן התראות.</p>',
+    unsupported: '<div class="devrow">המכשיר הזה לא תומך בהתראות.' + (ios ? ' באייפון נדרש iOS 16.4 ומעלה.' : '') + '</div>',
+    nokey: '<div class="devrow">ההתראות לטלפון עוד לא הוגדרו בשרת.' + (isChief() ? ' (מפתחות VAPID: <code>npm run push keys</code>)' : '') + '</div>',
+    checking: '<div class="devrow muted">בודק…</div>',
+    denied: '<div class="devrow">ההתראות חסומות במכשיר הזה. פותחים ' + (ios ? '<b>הגדרות ← התראות ← תורנויות</b>' : 'את הגדרות האפליקציה ← <b>התראות</b>') + ', מאשרים, וחוזרים לכאן.</div>',
+    off: '<div class="devrow"><span>ההתראות לטלפון כבויות במכשיר הזה.</span><button type="button" class="btn sm primary" data-push="on">🔔 הפעלת התראות</button></div>' + what,
+    on: '<div class="devrow"><span class="ok">✓ ההתראות פעילות במכשיר הזה</span><button type="button" class="btn sm ghost" data-push="off">כיבוי</button></div>' + what
+  };
+  $('#deviceCard').innerHTML = H[st];
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-install]')){ installSeenSet(); renderDevice(); return installApp() }
+  const p = e.target.closest('[data-push]');
+  if (p){ if (p.dataset.push === 'on') pushEnable(p); else if (confirm('לכבות את ההתראות במכשיר הזה?')) pushDisable() }
+});
+$('#installNo').addEventListener('click', () => { installSeenSet(); renderDevice(); toast('אפשר להוסיף בכל זמן מ"איך זה עובד"') });
+$('#pushLater').addEventListener('click', () => { try { localStorage.setItem('tr-push-later', String(Date.now())) } catch (e) {} renderDevice(); toast('אפשר להפעיל בכל זמן ב"איך זה עובד"') });
+/* לחיצה על התראה כשהאפליקציה כבר פתוחה — ה-Service Worker מביא אותה קדימה ושולח את הקישור (sw.js openApp) */
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.type !== 'push-open' || !SNAP) return;
+  openLink(new URL(String(d.url || '/'), location.origin).search);
+  if (!state.offline) refresh().catch(() => {});
+});
+
+/* ---------- sticky navigation: tabs (and the board's month bar) ----------
+ * הגבהים משתנים (סרגל האפליקציה בשתי שורות בטלפון, שם ארוך) — נמדדים ל---bar-h ול---tabs-h, שמהם מתחילים
+ * הסרגלים הדביקים. stuck — קו מפריד כשהסרגל כבר "תקוע" מעל התוכן. */
+const tabsTop = () => parseFloat(getComputedStyle($('#tabs')).top) || 0;
+/** מודד מחדש — גם בכל רינדור ושינוי גודל, לא רק ב-ResizeObserver (שלא תמיד יורה כשהאפליקציה נחשפת אחרי הכניסה) */
+function measureSticky(){
+  const css = document.documentElement.style, h = el => el.getBoundingClientRect().height + 'px';
+  css.setProperty('--bar-h', h($('.bar'))); css.setProperty('--tabs-h', h($('#tabs')));
+}
+/** מעבר טאב כשגללנו למטה: התוכן החדש מתחיל מתחת לטאבים הדביקים, ולא באמצע הדף */
+function toTabContent(){ const y = $('#tabsAnchor').getBoundingClientRect().top + window.scrollY - tabsTop(); if (window.scrollY > y) window.scrollTo(0, Math.max(0, y)) }
+(function(){
+  const bar = $('.bar'), tabs = $('#tabs'), mb = $('#boardBar');
+  if (window.ResizeObserver){ const ro = new ResizeObserver(measureSticky); ro.observe(bar); ro.observe(tabs) }
+  addEventListener('resize', measureSticky);
+  addEventListener('scroll', () => {
+    const y = window.scrollY > 0;
+    tabs.classList.toggle('stuck', y && tabs.getBoundingClientRect().top <= tabsTop() + 1);
+    mb.classList.toggle('stuck', y && mb.getBoundingClientRect().top <= tabs.getBoundingClientRect().bottom + 1);
+  }, { passive: true });
+})();
 
 /* ---------- sync: poll, leaving the page ---------- */
 function poll(){
