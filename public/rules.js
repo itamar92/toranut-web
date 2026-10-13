@@ -20,6 +20,8 @@
 const WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const WDFULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+/** כמה חודשים קדימה רופא/ה יכול/ה לסמן אילוצים מראש, בחודש שהצ׳יף עוד לא פתח (lib/api.js וממשק) */
+const AHEAD = 6;
 
 /* ---------- תאריכים ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -255,6 +257,6 @@ function issues(m, month){
   return { violations, empty };
 }
 
-return { WD, WDFULL, MONTHS, HOLIDAYS, EVES, S, pad, utc, isoOf, addDays, weekday, isIso, isMonth, monthOf, addMonths, daysOf, fmtShort, monthLabel, truthy,
+return { WD, WDFULL, MONTHS, AHEAD, HOLIDAYS, EVES, S, pad, utc, isoOf, addDays, weekday, isIso, isMonth, monthOf, addMonths, daysOf, fmtShort, monthLabel, truthy,
          dayInfo, model, activeDocs, info, constraintOf, slotOf, hasShift, isLocked, setSlot, setLock, stats, evaluate, tierOf, candCount, rank, seeded, autoAssign, issues };
 });
