@@ -287,6 +287,8 @@ input[type=email],input[type=number],input[type=tel]{font:inherit;color:var(--fg
 .reqnote{background:var(--pref-bg);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:13px}
 .codeShow{font-size:34px;letter-spacing:.3em;font-weight:700;text-align:center;direction:ltr;font-variant-numeric:tabular-nums;padding:12px;background:var(--bg);border-radius:10px}
 td input[type=email],td input[type=text]{min-width:170px;padding:4px 8px}
+#stTable td input{min-width:0;width:120px}
+#stTable td input.stShortIn{width:70px}
 tr.off td{opacity:.55}
 .kv{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;margin-block:6px}
 #tab-settings .grid2{grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr))}
@@ -932,7 +934,7 @@ function closePicker(){ const wasPlan = state.pick && !state.pick.swap; state.pi
 function renderSettings(){
   if (!isChief()) return;
   const used = id => (T.shifts || []).filter(r => r.station_id === id && r.doctor_id).length;
-  $('#stTable').innerHTML = '<thead><tr><th>עמדה</th><th>קיצור</th><th>מוסמכים</th><th>שיבוצים</th><th></th></tr></thead><tbody>' + M.stations.map(s => '<tr><td><span class="sw" style="' + stStyle(s) + '"></span>' + esc(s.name) + '</td><td>' + esc(s.short) + '</td><td class="tabular">' + activeDocs().filter(d => M.quals[d.id + '|' + s.id]).length + '</td><td class="tabular">' + used(s.id) + '</td><td>' +
+  $('#stTable').innerHTML = '<thead><tr><th>עמדה</th><th>קיצור</th><th>מוסמכים</th><th>שיבוצים</th><th></th></tr></thead><tbody>' + M.stations.map(s => '<tr><td><span class="sw" style="' + stStyle(s) + '"></span><input type="text" value="' + esc(s.name) + '" data-st-edit="' + esc(s.id) + '" data-f="name" maxlength="60" aria-label="שם העמדה ' + esc(s.name) + '"></td><td><input type="text" value="' + esc(s.short) + '" data-st-edit="' + esc(s.id) + '" data-f="short" maxlength="12" aria-label="קיצור של ' + esc(s.name) + '" class="stShortIn"></td><td class="tabular">' + activeDocs().filter(d => M.quals[d.id + '|' + s.id]).length + '</td><td class="tabular">' + used(s.id) + '</td><td>' +
     (state.confirmSt === s.id ? '<span class="small">להסיר? </span><button type="button" class="btn sm danger" data-rm-yes="' + esc(s.id) + '">כן</button> <button type="button" class="btn sm" data-rm-no="1">לא</button>' : '<button type="button" class="btn sm ghost" data-rm="' + esc(s.id) + '"' + (M.stations.length <= 1 ? ' disabled' : '') + '>הסרה</button>') + '</td></tr>').join('') + '</tbody>';
   const docs = (T.doctors || []).slice().sort((a, b) => (R.truthy(b.active, true) - R.truthy(a.active, true)) || String(a.name).localeCompare(String(b.name), 'he'));
   $('#docTable').innerHTML = '<thead><tr><th>שם</th><th>מייל (Google)</th>' + M.stations.map(s => '<th>' + esc(s.short) + '</th>').join('') + '<th>פעיל/ה</th><th>צ׳יף</th><th>קוד</th></tr></thead><tbody>' + docs.map(d => {
@@ -1201,6 +1203,14 @@ $('#stTable').addEventListener('click', e => {
   if (no){ state.confirmSt = null; renderSettings() }
   if (yes){ const id = yes.dataset.rmYes, name = (stById(id) || { name: '' }).name; state.confirmSt = null; act('removeStation', [id], r => 'העמדה "' + name + '" הוסרה' + (r.removedShifts ? ' (' + r.removedShifts + ' שיבוצים נמחקו)' : '')).catch(() => {}) }
 });
+$('#stTable').addEventListener('change', e => {
+  const t = e.target, id = t.dataset.stEdit, s = id && stById(id); if (!s) return;
+  const f = t.dataset.f, v = t.value.trim();
+  if (v === s[f]){ t.value = v; return }
+  if (f === 'name' && !v){ toast('צריך שם לעמדה'); t.value = s.name; return }
+  act('saveStation', [{ id, [f]: v }], f === 'name' ? 'שם העמדה עודכן: ' + v : 'הקיצור עודכן').catch(() => {});
+});
+$('#stTable').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset.stEdit) e.target.blur() });
 $('#stAdd').addEventListener('click', () => {
   const name = $('#stName').value.trim(), short = $('#stShort').value.trim();
   if (!name){ toast('צריך שם לעמדה'); return }
